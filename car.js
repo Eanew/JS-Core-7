@@ -1,99 +1,97 @@
+const FUEL_CONSUMPTION_PER_KILOMETER_QUOTIENT = 100
+
 const ErrorMessage = {
-    INVALID_PARAMETER: `Указан недопустимый параметр!`,
-    ALREADY_STARTED: `Машина уже заведена`,
-    NOT_STARTED: `Машина ещё не заведена`,
-    INVALID_FUEL_VALUE: `Неверное количество топлива для заправки`,
+    WRONG_PROPERTY_VALUE: `Указан недопустимый параметр`,
+    WRONG_FUEL_VALUE: `Неверное количество топлива для заправки`,
     TOO_MUCH_FUEL_VALUE: `Топливный бак переполнен`,
-    INVALID_SPEED: `Неверная скорость`,
-    INVALID_HOURS: `Неверное количество часов`,
-    TOO_FAST: `Машина не может ехать так быстро`,
-    NOT_STARTED_TO_DRIVE: `Машина должна быть заведена, чтобы ехать`,
-    NOT_ENOUGH_FUEL: `Недостаточно топлива`,
+    WRONG_SPEED_VALUE: `Неверная скорость`,
+    IS_SPEED_VALUE_GREATER_THAN_MAX_SPEED: `Машина не может ехать так быстро`,
+    WRONG_HOURS_VALUE: `Неверное количество часов`,
+    IS_ALREADY_STARTED: `Машина уже заведена`,
+    IS_NOT_STARTED: `Машина ещё не заведена`,
+    IS_NOT_STARTED_TO_DRIVE: `Машина должна быть заведена, чтобы ехать`,
+    NOT_ENOUGH_FUEL_TO_DRIVE: `Недостаточно топлива`,
 }
 
-const LITERS_PER_KILOMETERS_MULTIPLIER = 100
-
-const Config = {
-    FUEL_VALUE_BY_DEFAULT: 0,
-    IS_STARTED_VALUE_BY_DEFAULT: false,
-    MILEAGE_VALUE_BY_DEFAULT: 0,
-}
-
-const Parameter = {
-    BRAND_NAME_LENGTH: `BRAND_NAME_LENGTH`,
-    MODEL_NAME_LENGTH: `MODEL_NAME_LENGTH`,
+const PropertyName = {
+    BRAND: `BRAND`,
+    MODEL: `MODEL`,
     MANUFACTURING_YEAR: `MANUFACTURING_YEAR`,
     MAX_SPEED: `MAX_SPEED`,
     FUEL_VOLUME: `FUEL_VOLUME`,
     FUEL_CONSUMPTION: `FUEL_CONSUMPTION`,
 }
 
-const parametersRange = {
-    [Parameter.BRAND_NAME_LENGTH]: { FROM: 1, TO: 50 },
-    [Parameter.MODEL_NAME_LENGTH]: { FROM: 1, TO: 50 },
-    [Parameter.MANUFACTURING_YEAR]: { FROM: 1900, TO: new Date().getFullYear() },
-    [Parameter.MAX_SPEED]: { FROM: 100, TO: 300 },
-    [Parameter.FUEL_VOLUME]: { FROM: 5, TO: 20 },
-    [Parameter.FUEL_CONSUMPTION]: { FROM: 1.2, TO: 3 },
+const propertyValueRange = {
+    [PropertyName.BRAND]:               { from: 1,      to: 50 },
+    [PropertyName.MODEL]:               { from: 1,      to: 50 },
+    [PropertyName.MANUFACTURING_YEAR]:  { from: 1900,   to: new Date().getFullYear() },
+    [PropertyName.MAX_SPEED]:           { from: 100,    to: 300 },
+    [PropertyName.FUEL_VOLUME]:         { from: 5,      to: 20 },
+    [PropertyName.FUEL_CONSUMPTION]:    { from: 1.2,    to: 3 },
+
+    isAllowed(propertyName, value) {
+        const { from, to } = this[propertyName]
+
+        if (typeof value === `string`) value = value.length
+    
+        return value >= from && value <= to
+    },
 }
 
-const isAllowableRange = (parameter, value) => {
-    if (typeof value === `string`) value = value.length
+const isGreaterThanZeroValidNumber = value => Number.isFinite(value) && value > 0
 
-    return Boolean(
-        value >= parametersRange[parameter].FROM &&
-        value <= parametersRange[parameter].TO
-    )
+const isValid = {
+    brand: value => Boolean(
+        typeof value === `string` &&
+        propertyValueRange.isAllowed(PropertyName.BRAND, value)
+    ),
+
+    model: value => Boolean(
+        typeof value === `string` &&
+        propertyValueRange.isAllowed(PropertyName.MODEL, value)
+    ),
+
+    manufacturingYear: value => Boolean(
+        Number.isFinite(value) &&
+        Number.isInteger(value) &&
+        propertyValueRange.isAllowed(PropertyName.MANUFACTURING_YEAR, value)
+    ),
+
+    maxSpeed: value => Boolean(
+        Number.isFinite(value) &&
+        propertyValueRange.isAllowed(PropertyName.MAX_SPEED, value)
+    ),
+
+    maxFuelVolume: value => Boolean(
+        Number.isFinite(value) &&
+        propertyValueRange.isAllowed(PropertyName.FUEL_VOLUME, value)
+    ),
+
+    fuelConsumption: value => Boolean(
+        Number.isFinite(value) &&
+        propertyValueRange.isAllowed(PropertyName.FUEL_CONSUMPTION, value)
+    ),
+
+    fuelVolume: (value, limit) => Boolean(
+        Number.isFinite(value) &&
+        value >= 0 &&
+        value <= limit
+    ),
+
+    flag: value => Boolean(
+        typeof value === `boolean`
+    ),
+
+    mileage: value => Boolean(
+        Number.isFinite(value) &&
+        value >= 0
+    ),
+
+    fuelRefill: isGreaterThanZeroValidNumber,
+    speed: isGreaterThanZeroValidNumber,
+    hours: isGreaterThanZeroValidNumber,
 }
-
-const isValidFlag = flag => typeof flag === `boolean`
-
-const isValidPositiveNumber = number => Boolean(
-    Number.isFinite(number) &&
-    number > 0
-)
-
-const isAllowableBrand = brand => Boolean(
-    typeof brand === `string` &&
-    isAllowableRange(Parameter.BRAND_NAME_LENGTH, brand)
-)
-
-const isAllowableModel = model => Boolean(
-    typeof model === `string` &&
-    isAllowableRange(Parameter.MODEL_NAME_LENGTH, model)
-)
-
-const isAllowableManufacturingYear = year => Boolean(
-    Number.isFinite(year) &&
-    Number.isInteger(year) &&
-    isAllowableRange(Parameter.MANUFACTURING_YEAR, year)
-)
-    
-const isAllowableMaxSpeed = speed => Boolean(
-    Number.isFinite(speed) &&
-    isAllowableRange(Parameter.MAX_SPEED, speed)
-)
-    
-const isAllowableFuelVolume = volume => Boolean(
-    Number.isFinite(volume) &&
-    isAllowableRange(Parameter.FUEL_VOLUME, volume)
-)
-    
-const isAllowableFuelConsumption = consumption => Boolean(
-    Number.isFinite(consumption) &&
-    isAllowableRange(Parameter.FUEL_CONSUMPTION, consumption)
-)
-
-const isValidCurrentFuelVolume = (current, max) => Boolean(
-    Number.isFinite(current) &&
-    current >= 0 &&
-    current <= max
-)
-
-const isValidMileage = mileage => Boolean(
-    Number.isFinite(mileage) &&
-    mileage >= 0
-)
 
 const Car = class {
     #brand
@@ -113,66 +111,57 @@ const Car = class {
         maxSpeed,
         maxFuelVolume,
         fuelConsumption,
-        currentFuelVolume = Config.FUEL_VALUE_BY_DEFAULT,
-        isStarted = Config.IS_STARTED_VALUE_BY_DEFAULT,
-        mileage = Config.MILEAGE_VALUE_BY_DEFAULT,
+        currentFuelVolume = 0,
+        isStarted = false,
+        mileage = 0,
     ) {
-        if (
-            !isAllowableBrand(brand) ||
-            !isAllowableModel(model) ||
-            !isAllowableManufacturingYear(yearOfManufacturing) ||
-            !isAllowableMaxSpeed(maxSpeed) ||
-            !isAllowableFuelVolume(maxFuelVolume) ||
-            !isAllowableFuelConsumption(fuelConsumption) ||
-            !isValidCurrentFuelVolume(currentFuelVolume, maxFuelVolume) ||
-            !isValidFlag(isStarted) ||
-            !isValidMileage(mileage)
-        ) {
-            throw new Error(ErrorMessage.INVALID_PARAMETER)
-        }
+        this.brand = brand
+        this.model = model
+        this.yearOfManufacturing = yearOfManufacturing
+        this.maxSpeed = maxSpeed
+        this.maxFuelVolume = maxFuelVolume
+        this.fuelConsumption = fuelConsumption
 
-        this.#brand = brand
-        this.#model = model
-        this.#yearOfManufacturing = yearOfManufacturing
-        this.#maxSpeed = maxSpeed
-        this.#maxFuelVolume = maxFuelVolume
-        this.#fuelConsumption = fuelConsumption
+        if (!isValid.fuelVolume(currentFuelVolume, maxFuelVolume) ||
+            !isValid.flag(isStarted) ||
+            !isValid.mileage(mileage)
+        ) throw new Error(ErrorMessage.WRONG_PROPERTY_VALUE)
+
         this.#currentFuelVolume = currentFuelVolume
         this.#isStarted = isStarted
         this.#mileage = mileage
     }
 
     start() {
-        if(this.#isStarted) throw new Error(ErrorMessage.ALREADY_STARTED)
+        if(this.isStarted) throw new Error(ErrorMessage.IS_ALREADY_STARTED)
         this.#isStarted = true
     }
 
     shutDownEngine() {
-        if(!this.#isStarted) throw new Error(ErrorMessage.NOT_STARTED)
+        if(!this.isStarted) throw new Error(ErrorMessage.IS_NOT_STARTED)
         this.#isStarted = false
     }
 
     fillUpGasTank(liters) {
-        if (!isValidPositiveNumber(liters)) throw new Error(ErrorMessage.INVALID_FUEL_VALUE)
+        if (!isValid.fuelRefill(liters)) throw new Error(ErrorMessage.WRONG_FUEL_VALUE)
 
-        const newFuelVolume = this.#currentFuelVolume + liters
+        const fuelVolumeInLiters = this.currentFuelVolume + liters
 
-        if (newFuelVolume > this.#maxFuelVolume) throw new Error(ErrorMessage.TOO_MUCH_FUEL_VALUE)
-        this.#currentFuelVolume = newFuelVolume
+        if (fuelVolumeInLiters > this.maxFuelVolume) throw new Error(ErrorMessage.TOO_MUCH_FUEL_VALUE)
+        this.#currentFuelVolume = fuelVolumeInLiters
     }
 
     drive(speed, hours) {
-        if (!isValidPositiveNumber(speed)) throw new Error(ErrorMessage.INVALID_SPEED)
-        if (!isValidPositiveNumber(hours)) throw new Error(ErrorMessage.INVALID_HOURS)
-        if (speed > this.#maxSpeed) throw new Error(ErrorMessage.TOO_FAST)
-        if (!this.#isStarted) throw new Error(ErrorMessage.NOT_STARTED_TO_DRIVE)
+        if (!isValid.speed(speed)) throw new Error(ErrorMessage.WRONG_SPEED_VALUE)
+        if (!isValid.hours(hours)) throw new Error(ErrorMessage.WRONG_HOURS_VALUE)
+        if (speed > this.maxSpeed) throw new Error(ErrorMessage.IS_SPEED_VALUE_GREATER_THAN_MAX_SPEED)
+        if (!this.isStarted) throw new Error(ErrorMessage.IS_NOT_STARTED_TO_DRIVE)
 
         const distanceInKilometers = speed * hours
-        const requiredFuel = this.#fuelConsumption * distanceInKilometers / LITERS_PER_KILOMETERS_MULTIPLIER
+        const requiredFuelVolume = this.fuelConsumption * distanceInKilometers / FUEL_CONSUMPTION_PER_KILOMETER_QUOTIENT
 
-        if (requiredFuel > this.#currentFuelVolume) throw new Error(ErrorMessage.NOT_ENOUGH_FUEL)
-
-        this.#currentFuelVolume -= requiredFuel
+        if (requiredFuelVolume > this.currentFuelVolume) throw new Error(ErrorMessage.NOT_ENOUGH_FUEL_TO_DRIVE)
+        this.#currentFuelVolume -= requiredFuelVolume
         this.#mileage += distanceInKilometers
     }
 
@@ -181,7 +170,7 @@ const Car = class {
     }
 
     set brand(brand) {
-        if (!isAllowableBrand(brand)) throw new Error(ErrorMessage.INVALID_PARAMETER)
+        if (!isValid.brand(brand)) throw new Error(ErrorMessage.WRONG_PROPERTY_VALUE)
         this.#brand = brand
     }
     
@@ -190,7 +179,7 @@ const Car = class {
     }
 
     set model(model) {
-        if (!isAllowableModel(model)) throw new Error(ErrorMessage.INVALID_PARAMETER)
+        if (!isValid.model(model)) throw new Error(ErrorMessage.WRONG_PROPERTY_VALUE)
         this.#model = model
     }
     
@@ -199,7 +188,7 @@ const Car = class {
     }
 
     set yearOfManufacturing(year) {
-        if (!isAllowableManufacturingYear(year)) throw new Error(ErrorMessage.INVALID_PARAMETER)
+        if (!isValid.manufacturingYear(year)) throw new Error(ErrorMessage.WRONG_PROPERTY_VALUE)
         this.#yearOfManufacturing = year
     }
     
@@ -208,7 +197,7 @@ const Car = class {
     }
 
     set maxSpeed(speed) {
-        if (!isAllowableMaxSpeed(speed)) throw new Error(ErrorMessage.INVALID_PARAMETER)
+        if (!isValid.maxSpeed(speed)) throw new Error(ErrorMessage.WRONG_PROPERTY_VALUE)
         this.#maxSpeed = speed
     }
     
@@ -217,7 +206,7 @@ const Car = class {
     }
 
     set maxFuelVolume(volume) {
-        if (!isAllowableFuelVolume(volume)) throw new Error(ErrorMessage.INVALID_PARAMETER)
+        if (!isValid.maxFuelVolume(volume)) throw new Error(ErrorMessage.WRONG_PROPERTY_VALUE)
         this.#maxFuelVolume = volume
     }
     
@@ -226,7 +215,7 @@ const Car = class {
     }
 
     set fuelConsumption(consumption) {
-        if (!isAllowableFuelConsumption(consumption)) throw new Error(ErrorMessage.INVALID_PARAMETER)
+        if (!isValid.fuelConsumption(consumption)) throw new Error(ErrorMessage.WRONG_PROPERTY_VALUE)
         this.#fuelConsumption = consumption
     }
 
